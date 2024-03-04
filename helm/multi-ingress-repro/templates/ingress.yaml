@@ -1,0 +1,33 @@
+
+{{ $count := (add .Values.ingress_count 1 | int) }}
+{{- range $i := untilStep 1 $count 1 }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+    nginx.ingress.kubernetes.io/proxy-ssl-name: "{{ $.Values.service_name }}.{{ $.Release.Namespace }}.svc.cluster.local"
+    nginx.ingress.kubernetes.io/proxy-ssl-verify: "on"
+    nginx.ingress.kubernetes.io/proxy-ssl-verify-depth: "2"
+    nginx.ingress.kubernetes.io/proxy-ssl-secret: "{{ $.Release.Namespace }}/{{ $.Values.proxy_ssl_secret }}"
+  name: "ingress{{ $i }}"
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: "host-{{ $i }}.does.not.matter"
+    http:
+      paths:
+      - backend:
+          service:
+            name: "{{ $.Values.service_name }}"
+            port:
+              number: 9999
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - "host-{{ $i }}.does.not.matter"
+
+{{- end }}
+---
